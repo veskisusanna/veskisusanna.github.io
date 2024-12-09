@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Kaart andmetega</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+
+    <script>
+      let map;
+      function initMap() {
+        map = L.map('map').setView([58.5953, 25.0136], 7);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap',
+        }).addTo(map);
+      }
+
+      function loadMarkers(scriptUrl) {
+        map.eachLayer(function(layer) {
+          if (layer instanceof L.Marker) {
+            map.removeLayer(layer);
+          }
+        });
+
+        fetch(scriptUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Viga vastuses: ' + response.statusText);
+            }
+            return response.json();
+          })
+          .then(data => {
+            data.forEach(row => {
+              const kirjeldus = row[0];
+              const laiuskraad = parseFloat(row[1]);
+              const pikkuskraad = parseFloat(row[2]);
+
+              console.log(`Kirjeldus: ${kirjeldus}, Laiuskraad: ${laiuskraad}, Pikkuskraad: ${pikkuskraad}`);
+
+              if (!isNaN(laiuskraad) && !isNaN(pikkuskraad)) { 
+                L.marker([laiuskraad, pikkuskraad]).addTo(map)
+                  .bindPopup(kirjeldus); 
+              } else {
+                console.error(`Kehtetu koordinaat: (${laiuskraad}, ${pikkuskraad})`);
+              }
+            });
+          })
+          .catch(error => {
+            console.error('Viga andmete laadimisel:', error);
+            alert('Andmete laadimisel tekkis viga: ' + error.message);
+          });
+      }
+    </script>
+  </head>
+  <body onload="initMap()">
+    <h1>Kaardirakendus</h1>
+
+
+    <button onclick="loadMarkers('https://script.google.com/macros/s/AKfycbxPPUpv5CByjbpig-hA41nmpC6t5vD9WHUp310_cJAGkP1ik7TY3i8Z2IWwajY9f__c/exec')">Lossid kaardil</button>
+    <button onclick="loadMarkers('https://script.google.com/macros/s/AKfycbze6a9CQRJj_c_VUtfDfGP5xw649YtnnaMUwkK1jUPqs1zS5HuQG7De2EY-cYArobyx/exec')">Sõjaväemuuseumid kaardil</button>
+
+    <div id="map" style="height: 500px; width: 100%;"></div>
+  </body>
+</html>
